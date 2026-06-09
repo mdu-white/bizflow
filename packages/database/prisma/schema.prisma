@@ -42,16 +42,17 @@ enum TransactionStatus {
   VOID
 }
 
-enum DirectorLoanDirection {
-  TO_COMPANY
-  FROM_COMPANY
-}
-
 enum DirectorLoanStatus {
   OPEN
   PARTIALLY_REPAID
   SETTLED
   WRITTEN_OFF
+}
+
+enum DirectorLoanTransactionType {
+  DRAWDOWN
+  REPAYMENT
+  ADJUSTMENT
 }
 
 enum ContractorStatus {
@@ -76,7 +77,7 @@ model Organization {
   clients       Client[]
   projects      Project[]
   transactions  Transaction[]
-  directorLoans DirectorLoan[]
+  directorLoanAccounts DirectorLoanAccount[]
   contractors   Contractor[]
   auditEvents   AuditEvent[]
 }
@@ -187,27 +188,6 @@ model Transaction {
   @@index([projectId])
 }
 
-model DirectorLoan {
-  id             String                @id @default(cuid())
-  organizationId String
-  directorName   String
-  direction      DirectorLoanDirection
-  status         DirectorLoanStatus    @default(OPEN)
-  principalCents Int
-  balanceCents   Int
-  currency       String                @default("ZAR")
-  issuedAt       DateTime
-  dueAt          DateTime?
-  notes          String?
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@index([organizationId, status])
-  @@index([organizationId, directorName])
-}
-
 model Contractor {
   id                  String           @id @default(cuid())
   organizationId      String
@@ -227,6 +207,69 @@ model Contractor {
   project      Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@index([organizationId, status])
+  @@index([projectId])
+}
+
+model DirectorLoanAccount {
+  id                  String             @id @default(cuid())
+  organizationId      String
+  directorName        String
+  directorExternalRef String?
+  status              DirectorLoanStatus @default(OPEN)
+  currency            String             @default("ZAR")
+  openingBalanceCents Int                @default(0)
+  currentBalanceCents Int                @default(0)
+  openedAt            DateTime           @default(now())
+  closedAt            DateTime?
+  notes               String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  transactions DirectorLoanTransaction[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, directorName])
+  @@index([organizationId, directorExternalRef])
+}
+
+model DirectorLoanTransaction {
+  id                String                      @id @default(cuid())
+  organizationId    String
+  accountId         String
+  type              DirectorLoanTransactionType
+  amountCents       Int
+  balanceAfterCents Int
+  currency          String                      @default("ZAR")
+  occurredAt        DateTime
+  description       String
+  reference         String?
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+
+  account DirectorLoanAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, occurredAt])
+  @@index([organizationId, type])
+  @@index([accountId, occurredAt])
+}
+
+model ClientEntertainment {
+  id             String   @id @default(cuid())
+  organizationId String
+  clientId       String
+  projectId      String?
+  venue          String
+  purpose        String
+  attendees      Json
+  amountCents    Int
+  outcome        String?
+  occurredAt     DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId, occurredAt])
+  @@index([clientId])
   @@index([projectId])
 }
 

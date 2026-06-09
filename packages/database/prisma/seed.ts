@@ -125,16 +125,57 @@ async function main() {
     ]
   });
 
-  await prisma.directorLoan.create({
+  const directorLoanAccount = await prisma.directorLoanAccount.create({
     data: {
       organizationId: organization.id,
       directorName: "Mdu White",
-      direction: "TO_COMPANY",
       status: "OPEN",
-      principalCents: 10000000,
-      balanceCents: 10000000,
-      issuedAt: new Date("2026-06-01T00:00:00.000Z"),
+      openingBalanceCents: 0,
+      currentBalanceCents: 7500000,
+      openedAt: new Date("2026-06-01T00:00:00.000Z"),
       notes: "Founder working capital injection"
+    }
+  });
+
+  await prisma.directorLoanTransaction.createMany({
+    data: [
+      {
+        organizationId: organization.id,
+        accountId: directorLoanAccount.id,
+        type: "DRAWDOWN",
+        amountCents: 10000000,
+        balanceAfterCents: 10000000,
+        occurredAt: new Date("2026-06-01T00:00:00.000Z"),
+        description: "Founder working capital drawdown",
+        reference: "DL-0001"
+      },
+      {
+        organizationId: organization.id,
+        accountId: directorLoanAccount.id,
+        type: "REPAYMENT",
+        amountCents: 2500000,
+        balanceAfterCents: 7500000,
+        occurredAt: new Date("2026-06-10T00:00:00.000Z"),
+        description: "Partial director loan repayment",
+        reference: "DL-0002"
+      }
+    ]
+  });
+
+  await prisma.clientEntertainment.create({
+    data: {
+      organizationId: organization.id,
+      clientId: client.id,
+      projectId: project.id,
+      venue: "The Stack Cape Town",
+      purpose: "Quarterly project steering lunch",
+      attendees: {
+        internal: ["Mdu White"],
+        client: ["Anele Dlamini", "Cape Retail operations lead"]
+      },
+      amountCents: 385000,
+      outcome: "Confirmed phase two rollout scope",
+      occurredAt: new Date("2026-06-12T00:00:00.000Z")
     }
   });
 }
