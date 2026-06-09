@@ -1,0 +1,13 @@
+import { Controller, Get } from "@nestjs/common";
+import type { ApiHealth } from "@bizflow/types";
+
+@Controller("health")
+export class HealthController {
+  @Get()
+  health(): ApiHealth {
+    return {
+      status: "ok",
+      service: "bizflow-api"
+    };
+  }
+}
