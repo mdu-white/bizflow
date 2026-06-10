@@ -3,8 +3,8 @@
   "compilerOptions": {
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
     "noEmit": true,
     "types": ["node"]
   },
