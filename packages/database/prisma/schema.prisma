@@ -7,6 +7,236 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Organization {
+  id                   String                @id @default(cuid())
+  name                 String
+  tradingName          String?
+  registrationNo       String?               @unique
+  vatNumber            String?
+  taxNumber            String?
+  currency             String                @default("ZAR")
+  countryCode          String                @default("ZA")
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  auditEvents          AuditEvent[]
+  clients              Client[]
+  clientEntertainment  ClientEntertainment[]
+  contractors          Contractor[]
+  directorLoanAccounts DirectorLoanAccount[]
+  members              OrganizationMember[]
+  projects             Project[]
+  transactions         Transaction[]
+}
+
+model User {
+  id                  String                @id @default(cuid())
+  email               String                @unique
+  name                String
+  imageUrl            String?
+  passwordHash        String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  auditEvents         AuditEvent[]          @relation("AuditActor")
+  clientEntertainment ClientEntertainment[] @relation("ClientEntertainmentCreatedBy")
+  memberships         OrganizationMember[]
+  transactions        Transaction[]         @relation("TransactionCreatedBy")
+}
+
+model OrganizationMember {
+  id             String           @id @default(cuid())
+  organizationId String
+  userId         String
+  role           OrganizationRole @default(MEMBER)
+  status         MemberStatus     @default(INVITED)
+  invitedAt      DateTime         @default(now())
+  joinedAt       DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId, role])
+  @@index([userId])
+}
+
+model Client {
+  id                  String                @id @default(cuid())
+  organizationId      String
+  name                String
+  contactName         String?
+  email               String?
+  phone               String?
+  vatNumber           String?
+  billingAddress      String?
+  notes               String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  organization        Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientEntertainment ClientEntertainment[]
+  projects            Project[]
+  transactions        Transaction[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model Project {
+  id                  String                @id @default(cuid())
+  organizationId      String
+  clientId            String?
+  name                String
+  code                String?
+  description         String?
+  status              ProjectStatus         @default(PLANNED)
+  startsAt            DateTime?
+  endsAt              DateTime?
+  budgetCents         Int?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  clientEntertainment ClientEntertainment[]
+  contractors         Contractor[]
+  client              Client?               @relation(fields: [clientId], references: [id])
+  organization        Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  transactions        Transaction[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId, status])
+  @@index([clientId])
+}
+
+model Transaction {
+  id              String            @id @default(cuid())
+  organizationId  String
+  clientId        String?
+  projectId       String?
+  createdByUserId String?
+  type            TransactionType
+  status          TransactionStatus @default(DRAFT)
+  occurredAt      DateTime
+  description     String
+  amountCents     Int
+  currency        String            @default("ZAR")
+  vatRateBasisPts Int               @default(0)
+  vatAmountCents  Int               @default(0)
+  reference       String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  client          Client?           @relation(fields: [clientId], references: [id])
+  createdByUser   User?             @relation("TransactionCreatedBy", fields: [createdByUserId], references: [id])
+  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project         Project?          @relation(fields: [projectId], references: [id])
+
+  @@index([organizationId, occurredAt])
+  @@index([organizationId, type])
+  @@index([clientId])
+  @@index([projectId])
+}
+
+model Contractor {
+  id                   String           @id @default(cuid())
+  organizationId       String
+  projectId            String?
+  name                 String
+  email                String?
+  phone                String?
+  companyName          String?
+  taxNumber            String?
+  status               ContractorStatus @default(ACTIVE)
+  hourlyRateCents      Int?
+  monthlyRetainerCents Int?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  organization         Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project              Project?         @relation(fields: [projectId], references: [id])
+
+  @@index([organizationId, status])
+  @@index([projectId])
+}
+
+model DirectorLoanAccount {
+  id                  String                    @id @default(cuid())
+  organizationId      String
+  directorName        String
+  directorExternalRef String?
+  status              DirectorLoanStatus        @default(OPEN)
+  currency            String                    @default("ZAR")
+  openingBalanceCents Int                       @default(0)
+  currentBalanceCents Int                       @default(0)
+  openedAt            DateTime                  @default(now())
+  closedAt            DateTime?
+  notes               String?
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  organization        Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  transactions        DirectorLoanTransaction[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, directorName])
+  @@index([organizationId, directorExternalRef])
+}
+
+model DirectorLoanTransaction {
+  id                String                      @id @default(cuid())
+  organizationId    String
+  accountId         String
+  type              DirectorLoanTransactionType
+  amountCents       Int
+  balanceAfterCents Int
+  currency          String                      @default("ZAR")
+  occurredAt        DateTime
+  description       String
+  reference         String?
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+  account           DirectorLoanAccount         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, occurredAt])
+  @@index([organizationId, type])
+  @@index([accountId, occurredAt])
+}
+
+model ClientEntertainment {
+  id              String       @id @default(cuid())
+  organizationId  String
+  clientId        String
+  projectId       String?
+  venue           String
+  purpose         String
+  attendees       Json?
+  amountCents     Int
+  outcome         String?
+  occurredAt      DateTime
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  createdByUserId String?
+  client          Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdBy       User?        @relation("ClientEntertainmentCreatedBy", fields: [createdByUserId], references: [id])
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project         Project?     @relation(fields: [projectId], references: [id])
+
+  @@index([organizationId, occurredAt])
+  @@index([clientId])
+  @@index([projectId])
+  @@index([createdByUserId])
+}
+
+model AuditEvent {
+  id             String       @id @default(cuid())
+  organizationId String
+  actorUserId    String?
+  entityType     String
+  entityId       String
+  action         String
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  actor          User?        @relation("AuditActor", fields: [actorUserId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, entityType, entityId])
+  @@index([actorUserId])
+}
+
 enum OrganizationRole {
   OWNER
   ADMIN
@@ -59,245 +289,4 @@ enum ContractorStatus {
   ACTIVE
   INACTIVE
   ON_HOLD
-}
-
-model Organization {
-  id             String   @id @default(cuid())
-  name           String
-  tradingName    String?
-  registrationNo String?  @unique
-  vatNumber      String?
-  taxNumber      String?
-  currency       String   @default("ZAR")
-  countryCode    String   @default("ZA")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  members              OrganizationMember[]
-  clients              Client[]
-  projects             Project[]
-  transactions         Transaction[]
-  directorLoanAccounts DirectorLoanAccount[]
-  contractors          Contractor[]
-  auditEvents          AuditEvent[]
-  clientEntertainment  ClientEntertainment[]
-}
-
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  imageUrl  String?
-  passwordHash String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  memberships         OrganizationMember[]
-  transactions        Transaction[]         @relation("TransactionCreatedBy")
-  auditEvents         AuditEvent[]          @relation("AuditActor")
-  clientEntertainment ClientEntertainment[] @relation("ClientEntertainmentCreatedBy")
-}
-
-model OrganizationMember {
-  id             String           @id @default(cuid())
-  organizationId String
-  userId         String
-  role           OrganizationRole @default(MEMBER)
-  status         MemberStatus     @default(INVITED)
-  invitedAt      DateTime         @default(now())
-  joinedAt       DateTime?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([organizationId, userId])
-  @@index([organizationId, role])
-  @@index([userId])
-}
-
-model Client {
-  id             String   @id @default(cuid())
-  organizationId String
-  name           String
-  contactName    String?
-  email          String?
-  phone          String?
-  vatNumber      String?
-  billingAddress String?
-  notes          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  organization        Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  projects            Project[]
-  transactions        Transaction[]
-  clientEntertainment ClientEntertainment[]
-
-  @@unique([organizationId, name])
-  @@index([organizationId])
-}
-
-model Project {
-  id             String        @id @default(cuid())
-  organizationId String
-  clientId       String?
-  name           String
-  code           String?
-  description    String?
-  status         ProjectStatus @default(PLANNED)
-  startsAt       DateTime?
-  endsAt         DateTime?
-  budgetCents    Int?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  organization        Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  client              Client?               @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  transactions        Transaction[]
-  contractors         Contractor[]
-  clientEntertainment ClientEntertainment[]
-
-  @@unique([organizationId, code])
-  @@index([organizationId, status])
-  @@index([clientId])
-}
-
-model Transaction {
-  id              String            @id @default(cuid())
-  organizationId  String
-  clientId        String?
-  projectId       String?
-  createdByUserId String?
-  type            TransactionType
-  status          TransactionStatus @default(DRAFT)
-  occurredAt      DateTime
-  description     String
-  amountCents     Int
-  currency        String            @default("ZAR")
-  vatRateBasisPts Int               @default(0)
-  vatAmountCents  Int               @default(0)
-  reference       String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-
-  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  client        Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  project       Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  createdByUser User?        @relation("TransactionCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-
-  @@index([organizationId, occurredAt])
-  @@index([organizationId, type])
-  @@index([clientId])
-  @@index([projectId])
-}
-
-model Contractor {
-  id                   String           @id @default(cuid())
-  organizationId       String
-  projectId            String?
-  name                 String
-  email                String?
-  phone                String?
-  companyName          String?
-  taxNumber            String?
-  status               ContractorStatus @default(ACTIVE)
-  hourlyRateCents      Int?
-  monthlyRetainerCents Int?
-  createdAt            DateTime         @default(now())
-  updatedAt            DateTime         @updatedAt
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project      Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
-
-  @@index([organizationId, status])
-  @@index([projectId])
-}
-
-model DirectorLoanAccount {
-  id                  String             @id @default(cuid())
-  organizationId      String
-  directorName        String
-  directorExternalRef String?
-  status              DirectorLoanStatus @default(OPEN)
-  currency            String             @default("ZAR")
-  openingBalanceCents Int                @default(0)
-  currentBalanceCents Int                @default(0)
-  openedAt            DateTime           @default(now())
-  closedAt            DateTime?
-  notes               String?
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
-
-  organization Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  transactions DirectorLoanTransaction[]
-
-  @@index([organizationId, status])
-  @@index([organizationId, directorName])
-  @@index([organizationId, directorExternalRef])
-}
-
-model DirectorLoanTransaction {
-  id                String                      @id @default(cuid())
-  organizationId    String
-  accountId         String
-  type              DirectorLoanTransactionType
-  amountCents       Int
-  balanceAfterCents Int
-  currency          String                      @default("ZAR")
-  occurredAt        DateTime
-  description       String
-  reference         String?
-  createdAt         DateTime                    @default(now())
-  updatedAt         DateTime                    @updatedAt
-
-  account DirectorLoanAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-
-  @@index([organizationId, occurredAt])
-  @@index([organizationId, type])
-  @@index([accountId, occurredAt])
-}
-
-model ClientEntertainment {
-  id              String  @id @default(cuid())
-  organizationId  String
-  clientId        String
-  projectId       String?
-  createdByUserId String?
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  client       Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  project      Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  createdBy    User?        @relation("ClientEntertainmentCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  venue        String
-  purpose      String
-  attendees    Json?
-  amountCents  Int
-  outcome      String?
-  occurredAt   DateTime
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-
-  @@index([organizationId, occurredAt])
-  @@index([clientId])
-  @@index([projectId])
-  @@index([createdByUserId])
-}
-
-model AuditEvent {
-  id             String   @id @default(cuid())
-  organizationId String
-  actorUserId    String?
-  entityType     String
-  entityId       String
-  action         String
-  metadata       Json?
-  createdAt      DateTime @default(now())
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  actor        User?        @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
-
-  @@index([organizationId, entityType, entityId])
-  @@index([actorUserId])
 }
