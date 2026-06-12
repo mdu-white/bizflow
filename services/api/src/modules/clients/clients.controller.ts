@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Delete,
   UseGuards
 } from "@nestjs/common";
 
@@ -63,6 +64,17 @@ export class ClientsController {
       user.userId,
       id,
       dto
+    );
+  }
+
+  @Delete(":id")
+  remove(
+    @CurrentUser() user: any,
+    @Param("id") id: string
+) {
+  return this.clientsService.remove(
+    user.userId,
+    id
     );
   }
 }

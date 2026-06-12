@@ -14,6 +14,12 @@ export class ProjectsService {
     private readonly prisma: PrismaService
   ) {}
 
+  private activeRecordFilter() {
+    return {
+      deletedAt: null
+    };
+  }
+
   private async getOrganizationId(
     userId: string
   ) {
@@ -46,7 +52,8 @@ export class ProjectsService {
         await this.prisma.client.findFirst({
           where: {
             id: dto.clientId,
-            organizationId
+            organizationId,
+            deletedAt: null
           }
         });
 
@@ -71,7 +78,8 @@ export class ProjectsService {
 
     return this.prisma.project.findMany({
       where: {
-        organizationId
+        organizationId,
+        deletedAt: null
       },
       include: {
         client: true
@@ -93,7 +101,8 @@ export class ProjectsService {
       await this.prisma.project.findFirst({
         where: {
           id: projectId,
-          organizationId
+          organizationId,
+          deletedAt: null
         },
         include: {
           client: true
@@ -126,4 +135,23 @@ export class ProjectsService {
       data: dto
     });
   }
+
+  async remove(
+  userId: string,
+  projectId: string
+) {
+  await this.findOne(
+    userId,
+    projectId
+  );
+
+  return this.prisma.project.update({
+    where: {
+      id: projectId
+    },
+    data: {
+      deletedAt: new Date()
+    }
+  });
+}
 }

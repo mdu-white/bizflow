@@ -14,6 +14,12 @@ export class ClientsService {
     private readonly prisma: PrismaService
   ) {}
 
+  private activeRecordFilter() {
+    return {
+      deletedAt: null
+    };
+  }
+
   private async getOrganizationId(
     userId: string
   ) {
@@ -55,7 +61,8 @@ export class ClientsService {
 
     return this.prisma.client.findMany({
       where: {
-        organizationId
+        organizationId,
+        deletedAt: null
       },
       orderBy: {
         name: "asc"
@@ -63,42 +70,60 @@ export class ClientsService {
     });
   }
 
-  async findOne(
-    userId: string,
-    clientId: string
-  ) {
-    const organizationId =
-      await this.getOrganizationId(userId);
+    async findOne(
+        userId: string,
+        clientId: string
+        ) {
+        const organizationId =
+            await this.getOrganizationId(userId);
 
-    const client =
-      await this.prisma.client.findFirst({
-        where: {
-          id: clientId,
-          organizationId
-        }
-      });
+        const client =
+            await this.prisma.client.findFirst({
+                where: {
+                    id: clientId,
+                    organizationId,
+                    deletedAt: null
+                }
+            });
 
-    if (!client) {
-      throw new NotFoundException(
-        "Client not found"
-      );
+            if (!client) {
+                throw new NotFoundException(
+                "Client not found"
+                );
+            }
+
+        return client;
     }
 
-    return client;
-  }
+    async update(
+        userId: string,
+        clientId: string,
+        dto: UpdateClientDto
+        ) {
+        await this.findOne(userId, clientId);
 
-  async update(
-    userId: string,
-    clientId: string,
-    dto: UpdateClientDto
-  ) {
-    await this.findOne(userId, clientId);
+        return this.prisma.client.update({
+            where: {
+                id: clientId
+            },
+            data: dto
+        });
+    }
 
-    return this.prisma.client.update({
-      where: {
-        id: clientId
-      },
-      data: dto
-    });
-  }
+    async remove(
+        userId: string,
+        clientId: string
+        ) {
+        await this.findOne(userId, clientId);
+        return this.prisma.client.update({
+            where: {
+                id: clientId
+            },
+            data: {
+                deletedAt: new Date()
+            }
+        });
+    }
+
+    
 }

@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Delete,
   UseGuards
 } from "@nestjs/common";
 
@@ -65,4 +66,15 @@ export class ProjectsController {
       dto
     );
   }
+
+  @Delete(":id")
+remove(
+  @CurrentUser() user: any,
+  @Param("id") id: string
+) {
+  return this.projectsService.remove(
+    user.userId,
+    id
+  );
+}
 }
