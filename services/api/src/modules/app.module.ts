@@ -6,6 +6,7 @@ import { ClientsModule } from "./clients/clients.module";
 import { ProjectsModule } from "./projects/projects.module";
 import { CommonModule } from "./common/comond.module";
 import { TransactionsModule } from "./transactions/transactions.module";
+import { AuditModule } from "./audit/audit.module";
 
 @Module({
   imports: [
@@ -14,7 +15,8 @@ import { TransactionsModule } from "./transactions/transactions.module";
     ClientsModule,
     ProjectsModule,
     CommonModule,
-    TransactionsModule
+    TransactionsModule,
+    AuditModule
   ],
   controllers: [HealthController]
 })

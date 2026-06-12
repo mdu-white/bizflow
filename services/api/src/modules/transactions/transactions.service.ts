@@ -8,12 +8,14 @@ import { PrismaService } from "../prisma/prisma.service";
 import { OrganizationContextService } from "../common/services/organization-context.service";
 import { CreateTransactionDto } from "./dto/create-transaction.dto";
 import { UpdateTransactionDto } from "./dto/update-transaction.dto";
+import { AuditService } from "../audit/audit.service";
 
 @Injectable()
 export class TransactionsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly organizationContext: OrganizationContextService
+    private readonly organizationContext: OrganizationContextService,
+    private readonly auditService: AuditService
   ) {}
 
     async create(
@@ -65,8 +67,9 @@ export class TransactionsService {
             }
         }
 
-        return this.prisma.transaction.create({
-            data: {
+        const transaction =
+        await this.prisma.transaction.create({
+            data: { 
                 organizationId,
                 createdByUserId: userId,
 
@@ -81,22 +84,33 @@ export class TransactionsService {
 
                 currency: dto.currency ?? "ZAR",
 
-                vatRateBasisPts:
-                    dto.vatRateBasisPts ?? 0,
+                vatRateBasisPts: dto.vatRateBasisPts ?? 0,
 
-                vatAmountCents:
-                    dto.vatAmountCents ?? 0,
+                vatAmountCents: dto.vatAmountCents ?? 0,
 
                 clientId: dto.clientId,
+
                 projectId: dto.projectId,
 
-                internalReference:
-                    dto.internalReference,
+                internalReference: dto.internalReference,
 
-                externalReference:
-                    dto.externalReference
+                externalReference: dto.externalReference
             }
         });
+
+        await this.auditService.createEvent(
+            organizationId,
+            userId,
+            "TRANSACTION",
+            transaction.id,
+            "TRANSACTION_CREATED",
+            {
+                type: transaction.type,
+                amountCents: transaction.amountCents
+            }
+        );
+
+        return transaction;
     }
 
     async findAll(userId: string) {
@@ -172,12 +186,24 @@ export class TransactionsService {
             );
         }
 
-        return this.prisma.transaction.update({
+        const updated =
+        await this.prisma.transaction.update({
             where: {
                 id: transactionId
             },
             data: dto
-         });
+            });
+
+        await this.auditService.createEvent(
+            transaction.organizationId,
+            userId,
+            "TRANSACTION",
+            updated.id,
+            "TRANSACTION_UPDATED",
+            dto
+        );
+
+        return updated;
     }
 
     async post(
@@ -196,7 +222,8 @@ export class TransactionsService {
             );
         }
 
-        return this.prisma.transaction.update({
+        const posted =
+        await this.prisma.transaction.update({
             where: {
                 id: transactionId
             },
@@ -206,6 +233,19 @@ export class TransactionsService {
                 postedByUserId: userId
             }
         });
+
+        await this.auditService.createEvent(
+            transaction.organizationId,
+            userId,
+            "TRANSACTION",
+            posted.id,
+            "TRANSACTION_POSTED",
+            {
+                amountCents: posted.amountCents
+            }
+        );
+
+        return posted;
     }
 
     async void(
@@ -225,7 +265,8 @@ export class TransactionsService {
             );
         }
 
-        return this.prisma.transaction.update({
+        const voided =
+        await this.prisma.transaction.update({
             where: {
                 id: transactionId
             },
@@ -236,5 +277,18 @@ export class TransactionsService {
                 voidReason
             }
         });
+
+        await this.auditService.createEvent(
+            transaction.organizationId,
+            userId,
+            "TRANSACTION",
+            voided.id,
+            "TRANSACTION_VOIDED",
+            {
+                voidReason
+            }
+        );
+
+        return voided;
     }
 }
