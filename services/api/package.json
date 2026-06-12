@@ -7,6 +7,11 @@
     "dev": "nest start --watch",
     "lint": "tsc --noEmit",
     "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run test/unit",
+    "test:integration": "vitest run test/integration",
+    "test:e2e": "vitest run test/e2e",
+    "verify": "npm run build && npm run test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -29,6 +34,8 @@
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^22.10.2",
     "@types/passport-jwt": "^4.0.1",
+    "@types/supertest": "^7.2.0",
+    "supertest": "^7.2.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   }

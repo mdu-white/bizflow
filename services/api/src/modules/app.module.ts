@@ -8,6 +8,7 @@ import { CommonModule } from "./common/comond.module";
 import { TransactionsModule } from "./transactions/transactions.module";
 import { AuditModule } from "./audit/audit.module";
 import { ContractorsModule } from "./contractors/contractors.module";
+import { DirectorLoansModule } from "./director-loans/director-loans.module";
 
 @Module({
   imports: [
@@ -18,7 +19,8 @@ import { ContractorsModule } from "./contractors/contractors.module";
     CommonModule,
     TransactionsModule,
     AuditModule,
-    ContractorsModule
+    ContractorsModule,
+    DirectorLoansModule
   ],
   controllers: [HealthController]
 })
