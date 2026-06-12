@@ -40,6 +40,8 @@ model User {
   clientEntertainment ClientEntertainment[] @relation("ClientEntertainmentCreatedBy")
   memberships         OrganizationMember[]
   transactions        Transaction[]         @relation("TransactionCreatedBy")
+  postedTransactions  Transaction[] @relation("TransactionPostedBy")
+  voidedTransactions  Transaction[] @relation("TransactionVoidedBy")
 }
 
 model OrganizationMember {
@@ -70,6 +72,7 @@ model Client {
   vatNumber           String?
   billingAddress      String?
   notes               String?
+  deletedAt           DateTime?
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
   organization        Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -92,6 +95,7 @@ model Project {
   startsAt            DateTime?
   endsAt              DateTime?
   budgetCents         Int?
+  deletedAt           DateTime?
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
   clientEntertainment ClientEntertainment[]
@@ -106,31 +110,42 @@ model Project {
 }
 
 model Transaction {
-  id              String            @id @default(cuid())
-  organizationId  String
-  clientId        String?
-  projectId       String?
-  createdByUserId String?
-  type            TransactionType
-  status          TransactionStatus @default(DRAFT)
-  occurredAt      DateTime
-  description     String
-  amountCents     Int
-  currency        String            @default("ZAR")
-  vatRateBasisPts Int               @default(0)
-  vatAmountCents  Int               @default(0)
-  reference       String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  client          Client?           @relation(fields: [clientId], references: [id])
-  createdByUser   User?             @relation("TransactionCreatedBy", fields: [createdByUserId], references: [id])
-  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project         Project?          @relation(fields: [projectId], references: [id])
+  id                String            @id @default(cuid())
+  organizationId    String
+  clientId          String?
+  projectId         String?
+  createdByUserId   String?
+  type              TransactionType
+  status            TransactionStatus @default(DRAFT)
+  occurredAt        DateTime
+  description       String
+  amountCents       Int
+  currency          String            @default("ZAR")
+  vatRateBasisPts   Int               @default(0)
+  vatAmountCents    Int               @default(0)
+  internalReference String?
+  externalReference String?
+  postedAt          DateTime?
+  postedByUserId    String?
+  postedBy          User?             @relation("TransactionPostedBy", fields: [postedByUserId], references: [id], onDelete: SetNull)
+  voidedAt          DateTime?
+  voidedByUserId    String?
+  voidedBy          User?             @relation("TransactionVoidedBy", fields: [voidedByUserId], references: [id], onDelete: SetNull)
+  voidReason        String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  client            Client?           @relation(fields: [clientId], references: [id])
+  createdByUser     User?             @relation("TransactionCreatedBy", fields: [createdByUserId], references: [id])
+  organization      Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project           Project?          @relation(fields: [projectId], references: [id])
 
   @@index([organizationId, occurredAt])
   @@index([organizationId, type])
   @@index([clientId])
   @@index([projectId])
+  @@index([status])
+  @@index([postedAt])
+  @@index([voidedAt])
 }
 
 model Contractor {
@@ -145,6 +160,7 @@ model Contractor {
   status               ContractorStatus @default(ACTIVE)
   hourlyRateCents      Int?
   monthlyRetainerCents Int?
+  deletedAt            DateTime?
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
   organization         Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -165,6 +181,7 @@ model DirectorLoanAccount {
   currentBalanceCents Int                       @default(0)
   openedAt            DateTime                  @default(now())
   closedAt            DateTime?
+  deletedAt           DateTime?
   notes               String?
   createdAt           DateTime                  @default(now())
   updatedAt           DateTime                  @updatedAt

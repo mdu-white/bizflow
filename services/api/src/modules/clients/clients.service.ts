@@ -7,11 +7,13 @@ import {
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateClientDto } from "./dto/create-client.dto";
 import { UpdateClientDto } from "./dto/update-client.dto";
+import { OrganizationContextService } from "../common/services/organization-context.service";
 
 @Injectable()
 export class ClientsService {
   constructor(
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    private readonly organizationContext: OrganizationContextService
   ) {}
 
   private activeRecordFilter() {
@@ -20,32 +22,12 @@ export class ClientsService {
     };
   }
 
-  private async getOrganizationId(
-    userId: string
-  ) {
-    const membership =
-      await this.prisma.organizationMember.findFirst({
-        where: {
-          userId,
-          status: "ACTIVE"
-        }
-      });
-
-    if (!membership) {
-      throw new ForbiddenException(
-        "No active organization membership"
-      );
-    }
-
-    return membership.organizationId;
-  }
-
   async create(
     userId: string,
     dto: CreateClientDto
   ) {
     const organizationId =
-      await this.getOrganizationId(userId);
+      await this.organizationContext.getOrganizationId(userId);
 
     return this.prisma.client.create({
       data: {
@@ -57,7 +39,7 @@ export class ClientsService {
 
   async findAll(userId: string) {
     const organizationId =
-      await this.getOrganizationId(userId);
+      await this.organizationContext.getOrganizationId(userId);
 
     return this.prisma.client.findMany({
       where: {
@@ -75,7 +57,7 @@ export class ClientsService {
         clientId: string
         ) {
         const organizationId =
-            await this.getOrganizationId(userId);
+            await this.organizationContext.getOrganizationId(userId);
 
         const client =
             await this.prisma.client.findFirst({

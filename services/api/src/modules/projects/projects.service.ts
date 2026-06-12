@@ -7,11 +7,13 @@ import {
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateProjectDto } from "./dto/create-project.dto";
 import { UpdateProjectDto } from "./dto/update-project.dto";
+import { OrganizationContextService } from "../common/services/organization-context.service";
 
 @Injectable()
 export class ProjectsService {
   constructor(
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    private readonly organizationContext: OrganizationContextService
   ) {}
 
   private activeRecordFilter() {
@@ -20,32 +22,12 @@ export class ProjectsService {
     };
   }
 
-  private async getOrganizationId(
-    userId: string
-  ) {
-    const membership =
-      await this.prisma.organizationMember.findFirst({
-        where: {
-          userId,
-          status: "ACTIVE"
-        }
-      });
-
-    if (!membership) {
-      throw new ForbiddenException(
-        "No active organization membership"
-      );
-    }
-
-    return membership.organizationId;
-  }
-
   async create(
     userId: string,
     dto: CreateProjectDto
   ) {
     const organizationId =
-      await this.getOrganizationId(userId);
+      await this.organizationContext.getOrganizationId(userId);
 
     if (dto.clientId) {
       const client =
@@ -74,7 +56,7 @@ export class ProjectsService {
 
   async findAll(userId: string) {
     const organizationId =
-      await this.getOrganizationId(userId);
+      await this.organizationContext.getOrganizationId(userId);
 
     return this.prisma.project.findMany({
       where: {
@@ -95,7 +77,7 @@ export class ProjectsService {
     projectId: string
   ) {
     const organizationId =
-      await this.getOrganizationId(userId);
+      await this.organizationContext.getOrganizationId(userId);
 
     const project =
       await this.prisma.project.findFirst({
