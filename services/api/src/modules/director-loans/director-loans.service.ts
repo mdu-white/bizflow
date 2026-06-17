@@ -243,7 +243,6 @@ export class DirectorLoansService {
     return this.prisma.directorLoanTransaction.findMany({
       where: {
         accountId: account.id,
-        deletedAt: null
       },
       orderBy: {
         occurredAt: "desc"
