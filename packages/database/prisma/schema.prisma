@@ -26,6 +26,7 @@ model Organization {
   members              OrganizationMember[]
   projects             Project[]
   transactions         Transaction[]
+  invoices             Invoice[]
 }
 
 model User {
@@ -33,15 +34,17 @@ model User {
   email               String                @unique
   name                String
   imageUrl            String?
-  passwordHash        String?
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
+  passwordHash        String?
   auditEvents         AuditEvent[]          @relation("AuditActor")
   clientEntertainment ClientEntertainment[] @relation("ClientEntertainmentCreatedBy")
   memberships         OrganizationMember[]
   transactions        Transaction[]         @relation("TransactionCreatedBy")
-  postedTransactions  Transaction[] @relation("TransactionPostedBy")
-  voidedTransactions  Transaction[] @relation("TransactionVoidedBy")
+  postedTransactions  Transaction[]         @relation("TransactionPostedBy")
+  voidedTransactions  Transaction[]         @relation("TransactionVoidedBy")
+  createdInvoices     Invoice[]             @relation("InvoiceCreatedBy")
+  sentInvoices        Invoice[]             @relation("InvoiceSentBy")
 }
 
 model OrganizationMember {
@@ -72,13 +75,14 @@ model Client {
   vatNumber           String?
   billingAddress      String?
   notes               String?
-  deletedAt           DateTime?
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
+  deletedAt           DateTime?
   organization        Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   clientEntertainment ClientEntertainment[]
   projects            Project[]
   transactions        Transaction[]
+  invoices            Invoice[]
 
   @@unique([organizationId, name])
   @@index([organizationId])
@@ -95,14 +99,15 @@ model Project {
   startsAt            DateTime?
   endsAt              DateTime?
   budgetCents         Int?
-  deletedAt           DateTime?
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
+  deletedAt           DateTime?
   clientEntertainment ClientEntertainment[]
   contractors         Contractor[]
   client              Client?               @relation(fields: [clientId], references: [id])
   organization        Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   transactions        Transaction[]
+  invoices            Invoice[]
 
   @@unique([organizationId, code])
   @@index([organizationId, status])
@@ -123,21 +128,23 @@ model Transaction {
   currency          String            @default("ZAR")
   vatRateBasisPts   Int               @default(0)
   vatAmountCents    Int               @default(0)
-  internalReference String?
-  externalReference String?
-  postedAt          DateTime?
-  postedByUserId    String?
-  postedBy          User?             @relation("TransactionPostedBy", fields: [postedByUserId], references: [id], onDelete: SetNull)
-  voidedAt          DateTime?
-  voidedByUserId    String?
-  voidedBy          User?             @relation("TransactionVoidedBy", fields: [voidedByUserId], references: [id], onDelete: SetNull)
-  voidReason        String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
+  externalReference String?
+  internalReference String?
+  invoiceId         String?
+  postedAt          DateTime?
+  postedByUserId    String?
+  voidReason        String?
+  voidedAt          DateTime?
+  voidedByUserId    String?
   client            Client?           @relation(fields: [clientId], references: [id])
   createdByUser     User?             @relation("TransactionCreatedBy", fields: [createdByUserId], references: [id])
   organization      Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  postedBy          User?             @relation("TransactionPostedBy", fields: [postedByUserId], references: [id])
   project           Project?          @relation(fields: [projectId], references: [id])
+  voidedBy          User?             @relation("TransactionVoidedBy", fields: [voidedByUserId], references: [id])
+  invoice           Invoice?          @relation(fields: [invoiceId], references: [id])
 
   @@index([organizationId, occurredAt])
   @@index([organizationId, type])
@@ -146,6 +153,7 @@ model Transaction {
   @@index([status])
   @@index([postedAt])
   @@index([voidedAt])
+  @@index([invoiceId])
 }
 
 model Contractor {
@@ -160,14 +168,15 @@ model Contractor {
   status               ContractorStatus @default(ACTIVE)
   hourlyRateCents      Int?
   monthlyRetainerCents Int?
-  deletedAt            DateTime?
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
+  deletedAt            DateTime?
   organization         Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   project              Project?         @relation(fields: [projectId], references: [id])
 
   @@index([organizationId, status])
   @@index([projectId])
+  @@index([deletedAt])
 }
 
 model DirectorLoanAccount {
@@ -181,10 +190,10 @@ model DirectorLoanAccount {
   currentBalanceCents Int                       @default(0)
   openedAt            DateTime                  @default(now())
   closedAt            DateTime?
-  deletedAt           DateTime?
   notes               String?
   createdAt           DateTime                  @default(now())
   updatedAt           DateTime                  @updatedAt
+  deletedAt           DateTime?
   organization        Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   transactions        DirectorLoanTransaction[]
 
@@ -254,6 +263,66 @@ model AuditEvent {
   @@index([actorUserId])
 }
 
+model Invoice {
+  id              String            @id @default(cuid())
+  organizationId  String
+  clientId        String
+  projectId       String?
+  createdByUserId String?
+  sentByUserId    String?
+  invoiceNumber   String
+  issueDate       DateTime
+  dueDate         DateTime
+  sentAt          DateTime?
+  subtotalCents   Int
+  vatCents        Int
+  totalCents      Int
+  status          InvoiceStatus     @default(DRAFT)
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client          Client            @relation(fields: [clientId], references: [id])
+  project         Project?          @relation(fields: [projectId], references: [id])
+  createdByUser   User?             @relation("InvoiceCreatedBy", fields: [createdByUserId], references: [id])
+  sentByUser      User?             @relation("InvoiceSentBy", fields: [sentByUserId], references: [id])
+  lineItems       InvoiceLineItem[]
+  payments        InvoicePayment[]
+  transactions    Transaction[]
+
+  @@unique([organizationId, invoiceNumber])
+  @@index([organizationId])
+  @@index([clientId])
+  @@index([projectId])
+  @@index([status])
+}
+
+model InvoiceLineItem {
+  id             String  @id @default(cuid())
+  invoiceId      String
+  description    String
+  quantity       Int
+  unitPriceCents Int
+  lineTotalCents Int
+  invoice        Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model InvoicePayment {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  paymentDate DateTime
+  amountCents Int
+  reference   String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
 enum OrganizationRole {
   OWNER
   ADMIN
@@ -306,4 +375,13 @@ enum ContractorStatus {
   ACTIVE
   INACTIVE
   ON_HOLD
+  TERMINATED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PARTIALLY_PAID
+  PAID
+  VOID
 }

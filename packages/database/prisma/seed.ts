@@ -107,7 +107,7 @@ async function main() {
         amountCents: 8625000,
         vatRateBasisPts: 1500,
         vatAmountCents: 1125000,
-        reference: "INV-0001"
+        externalReference: "INV-0001"
       },
       {
         organizationId: organization.id,
@@ -120,7 +120,7 @@ async function main() {
         amountCents: 4500000,
         vatRateBasisPts: 0,
         vatAmountCents: 0,
-        reference: "SUP-0001"
+        externalReference: "SUP-0001"
       }
     ]
   });
