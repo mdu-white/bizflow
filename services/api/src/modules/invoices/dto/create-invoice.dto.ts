@@ -5,13 +5,14 @@ export class CreateInvoiceDto {
 
   projectId?: string;
 
-  invoiceNumber!: string;
-
   issueDate!: Date;
+
   dueDate!: Date;
 
   subtotalCents!: number;
+
   vatCents!: number;
+
   totalCents!: number;
 
   notes?: string;
