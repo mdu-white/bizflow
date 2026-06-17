@@ -9,6 +9,7 @@ import { TransactionsModule } from "./transactions/transactions.module";
 import { AuditModule } from "./audit/audit.module";
 import { ContractorsModule } from "./contractors/contractors.module";
 import { DirectorLoansModule } from "./director-loans/director-loans.module";
+import { ReportsModule } from "./reports/reports.module";
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { DirectorLoansModule } from "./director-loans/director-loans.module";
     TransactionsModule,
     AuditModule,
     ContractorsModule,
-    DirectorLoansModule
+    DirectorLoansModule,
+    ReportsModule
   ],
   controllers: [HealthController]
 })
