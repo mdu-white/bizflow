@@ -5,7 +5,7 @@ const config: Config = {
   testEnvironment: "node",
 
   testMatch: [
-    "<rootDir>/src/test/e2e/**/*.e2e-spec.ts"
+    "<rootDir>/src/test/e2e/**/*.e2e.spec.ts"
   ],
 
   moduleFileExtensions: [

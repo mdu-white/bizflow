@@ -1,14 +1,24 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import request from "supertest";
+import "reflect-metadata";
+
 import { INestApplication } from "@nestjs/common";
+import { Test } from "@nestjs/testing";
+import request from "supertest";
 
-import { createTestApp } from "./setup";
+import { AppModule } from "../../modules/app.module";
 
-describe("Health Endpoint", () => {
+describe("Health E2E", () => {
   let app: INestApplication;
 
   beforeAll(async () => {
-    app = await createTestApp();
+    const moduleRef =
+      await Test.createTestingModule({
+        imports: [AppModule]
+      }).compile();
+
+    app =
+      moduleRef.createNestApplication();
+
+    await app.init();
   });
 
   afterAll(async () => {
@@ -20,6 +30,12 @@ describe("Health Endpoint", () => {
       await request(app.getHttpServer())
         .get("/health");
 
-    expect(response.status).toBe(200);
+    expect(response.status)
+      .toBe(200);
+
+    expect(response.body).toEqual({
+      status: "ok",
+      service: "bizflow-api"
+    });
   });
 });
