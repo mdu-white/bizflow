@@ -11,6 +11,7 @@ import { ContractorsModule } from "./contractors/contractors.module";
 import { DirectorLoansModule } from "./director-loans/director-loans.module";
 import { ReportsModule } from "./reports/reports.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
+import { InvoicesModule } from "./invoices/invoices.module";
 
 @Module({
   imports: [
@@ -24,7 +25,8 @@ import { DashboardModule } from "./dashboard/dashboard.module";
     ContractorsModule,
     DirectorLoansModule,
     ReportsModule,
-    DashboardModule
+    DashboardModule,
+    InvoicesModule
   ],
   controllers: [HealthController]
 })
