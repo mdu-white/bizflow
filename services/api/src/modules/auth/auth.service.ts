@@ -12,51 +12,57 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService
-  ) {}
+  ) { }
 
   async register(dto: RegisterDto) {
-    const existingUser = await this.prisma.user.findUnique({
-      where: {
-        email: dto.email
-      }
-    });
-
-    if (existingUser) {
-      throw new ConflictException("Email already registered");
-    }
-
-    const passwordHash = await bcrypt.hash(dto.password, 10);
-
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        name: dto.name,
-        passwordHash
-      }
-    });
-
-    const organization = await this.prisma.organization.create({
-      data: {
-        name: dto.organizationName
-      }
-    });
-
-    const membership =
-      await this.prisma.organizationMember.create({
-        data: {
-          organizationId: organization.id,
-          userId: user.id,
-          role: "OWNER",
-          status: "ACTIVE",
-          joinedAt: new Date()
+    try {
+      const existingUser = await this.prisma.user.findUnique({
+        where: {
+          email: dto.email
         }
       });
 
-    return {
-      user,
-      organization,
-      membership
-    };
+      if (existingUser) {
+        throw new ConflictException("Email already registered");
+      }
+
+      const passwordHash = await bcrypt.hash(dto.password, 10);
+
+      const user = await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          name: dto.name,
+          passwordHash
+        }
+      });
+
+      const organization = await this.prisma.organization.create({
+        data: {
+          name: dto.organizationName
+        }
+      });
+
+      const membership =
+        await this.prisma.organizationMember.create({
+          data: {
+            organizationId: organization.id,
+            userId: user.id,
+            role: "OWNER",
+            status: "ACTIVE",
+            joinedAt: new Date()
+          }
+        });
+
+      return {
+        user,
+        organization,
+        membership
+      };
+
+    } catch (error) {
+      console.error("REGISTER ERROR", error);
+      throw error;
+    }
   }
 
   async login(dto: LoginDto) {
