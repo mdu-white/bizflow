@@ -279,6 +279,8 @@ model Invoice {
   totalCents      Int
   status          InvoiceStatus     @default(DRAFT)
   notes           String?
+  pdfPath         String?
+  pdfGeneratedAt  DateTime?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   deletedAt       DateTime?
@@ -311,14 +313,15 @@ model InvoiceLineItem {
 }
 
 model InvoicePayment {
-  id          String   @id @default(cuid())
-  invoiceId   String
-  paymentDate DateTime
-  amountCents Int
-  reference   String?
-  notes       String?
-  createdAt   DateTime @default(now())
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  id                String   @id @default(cuid())
+  invoiceId         String
+  amountCents       Int
+  paymentDate       DateTime
+  reference         String?
+  notes             String?
+  createdAt         DateTime @default(now())
+
+  invoice           Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId])
 }

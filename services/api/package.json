@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "build": "nest build",
-    "dev": "nest start --watch",
+    "start": "node dist/services/api/src/main.js",
+    "dev": "nest build --watch",
+    "start:dev": "concurrently \"nest build --watch\" \"nodemon dist/services/api/src/main.js\"",
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -37,6 +39,8 @@
     "@types/passport-jwt": "^4.0.1",
     "@types/pdfkit": "^0.17.6",
     "@types/supertest": "^7.2.0",
+    "concurrently": "^10.0.3",
+    "nodemon": "^3.1.14",
     "supertest": "^7.2.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

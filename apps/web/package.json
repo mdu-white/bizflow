@@ -13,6 +13,7 @@
   "dependencies": {
     "@bizflow/types": "*",
     "@bizflow/ui": "*",
+    "lucide-react": "^0.468.0",
     "next": "^15.1.3",
     "next-auth": "^4.24.14",
     "react": "^19.0.0",
