@@ -1,5 +1,4 @@
 import {
-  ForbiddenException,
   Injectable,
   NotFoundException
 } from "@nestjs/common";
@@ -29,21 +28,25 @@ export class ProjectsService {
     const organizationId =
       await this.organizationContext.getOrganizationId(userId);
 
-    if (dto.clientId) {
-      const client =
-        await this.prisma.client.findFirst({
-          where: {
-            id: dto.clientId,
-            organizationId,
-            deletedAt: null
-          }
-        });
+    if (!dto.clientId) {
+      throw new NotFoundException(
+        "Client is required"
+      );
+    }
 
-      if (!client) {
-        throw new NotFoundException(
-          "Client not found"
-        );
-      }
+    const client =
+      await this.prisma.client.findFirst({
+        where: {
+          id: dto.clientId,
+          organizationId,
+          deletedAt: null
+        }
+      });
+
+    if (!client) {
+      throw new NotFoundException(
+        "Client not found"
+      );
     }
 
     return this.prisma.project.create({
@@ -119,21 +122,21 @@ export class ProjectsService {
   }
 
   async remove(
-  userId: string,
-  projectId: string
-) {
-  await this.findOne(
-    userId,
-    projectId
-  );
+    userId: string,
+    projectId: string
+  ) {
+    await this.findOne(
+      userId,
+      projectId
+    );
 
-  return this.prisma.project.update({
-    where: {
-      id: projectId
-    },
-    data: {
-      deletedAt: new Date()
-    }
-  });
-}
+    return this.prisma.project.update({
+      where: {
+        id: projectId
+      },
+      data: {
+        deletedAt: new Date()
+      }
+    });
+  }
 }

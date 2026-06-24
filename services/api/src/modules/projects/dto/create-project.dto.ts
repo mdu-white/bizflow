@@ -4,7 +4,7 @@ export class CreateProjectDto {
   name!: string;
   code?: string;
   description?: string;
-  clientId?: string;
+  clientId!: string;
 
   status?: ProjectStatus;
 

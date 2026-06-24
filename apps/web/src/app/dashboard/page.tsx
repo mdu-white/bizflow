@@ -17,24 +17,50 @@ import {
   type CurrentUser
 } from "../../lib/auth";
 
+import {
+  getDashboard,
+  type DashboardData
+} from "../../lib/dashboard";
+
 export default function DashboardPage() {
   const [currentUser, setCurrentUser] =
     useState<CurrentUser | null>(null);
 
+  const [dashboard, setDashboard] =
+    useState<DashboardData | null>(
+      null
+    );
+
   useEffect(() => {
-    async function loadUser() {
+    async function loadData() {
       try {
-        const user =
-          await getCurrentUser();
+        const [
+          user,
+          dashboardData
+        ] = await Promise.all([
+          getCurrentUser(),
+          getDashboard()
+        ]);
 
         setCurrentUser(user);
+        setDashboard(
+          dashboardData
+        );
       } catch (error) {
         console.error(error);
       }
     }
 
-    void loadUser();
+    void loadData();
   }, []);
+
+  function formatCurrency(
+    cents: number
+  ) {
+    return `R${(
+      cents / 100
+    ).toFixed(2)}`;
+  }
 
   return (
     <AppShell
@@ -47,7 +73,8 @@ export default function DashboardPage() {
             currentUser?.user.name
           }
           organizationName={
-            currentUser?.organization.name
+            currentUser?.organization
+              .name
           }
         />
       }
@@ -56,13 +83,16 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>
-              Total Revenue
+              Revenue
             </CardTitle>
           </CardHeader>
 
           <CardContent>
             <p className="text-3xl font-bold">
-              R0.00
+              {formatCurrency(
+                dashboard?.revenueThisMonthCents ??
+                  0
+              )}
             </p>
           </CardContent>
         </Card>
@@ -70,13 +100,16 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>
-              Outstanding Invoices
+              Profit
             </CardTitle>
           </CardHeader>
 
           <CardContent>
             <p className="text-3xl font-bold">
-              R0.00
+              {formatCurrency(
+                dashboard?.profitThisMonthCents ??
+                  0
+              )}
             </p>
           </CardContent>
         </Card>
@@ -90,7 +123,8 @@ export default function DashboardPage() {
 
           <CardContent>
             <p className="text-3xl font-bold">
-              0
+              {dashboard?.activeProjects ??
+                0}
             </p>
           </CardContent>
         </Card>
@@ -104,8 +138,66 @@ export default function DashboardPage() {
 
           <CardContent>
             <p className="text-3xl font-bold">
-              0
+              {dashboard?.activeClients ??
+                0}
             </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Top Projects
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent>
+            {!dashboard ||
+            dashboard.topProjects
+              .length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="text-slate-500">
+                  No project data
+                  available.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {dashboard.topProjects.map(
+                  (project) => (
+                    <div
+                      key={
+                        project.projectId
+                      }
+                      className="rounded-lg border border-slate-200 p-4"
+                    >
+                      <p className="font-medium">
+                        {
+                          project.projectName
+                        }
+                      </p>
+
+                      <p className="text-sm text-slate-500">
+                        Profit:{" "}
+                        {formatCurrency(
+                          project.profitCents
+                        )}
+                      </p>
+
+                      <p className="text-sm text-slate-500">
+                        Margin:{" "}
+                        {
+                          project.marginPercent
+                        }
+                        %
+                      </p>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
