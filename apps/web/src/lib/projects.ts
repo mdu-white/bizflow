@@ -5,9 +5,17 @@ export interface Project {
   name: string;
   code?: string;
   description?: string;
-  clientId?: string;
+
+  clientId: string;
+
   status?: string;
+
   budgetCents?: number;
+
+  client?: {
+    id: string;
+    name: string;
+  };
 }
 
 export async function getProjects() {
@@ -21,7 +29,7 @@ export async function createProject(
     name: string;
     code?: string;
     description?: string;
-    clientId?: string;
+    clientId: string;
   }
 ) {
   return apiFetch(
@@ -29,6 +37,37 @@ export async function createProject(
     {
       method: "POST",
       body: JSON.stringify(data)
+    }
+  );
+}
+
+export async function updateProject(
+  id: string,
+  data: {
+    name: string;
+    code?: string;
+    description?: string;
+    clientId?: string;
+    status?: string;
+    budgetCents?: number;
+  }
+) {
+  return apiFetch(
+    `/projects/${id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(data)
+    }
+  );
+}
+
+export async function deleteProject(
+  id: string
+) {
+  return apiFetch(
+    `/projects/${id}`,
+    {
+      method: "DELETE"
     }
   );
 }

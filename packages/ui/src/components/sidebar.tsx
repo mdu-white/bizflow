@@ -5,61 +5,65 @@ import {
   FileText,
   FolderKanban,
   HandCoins,
+  Landmark,
   LayoutDashboard,
   Receipt,
-  Users
+  Users,
 } from "lucide-react";
 
 const navigation = [
   {
     label: "Dashboard",
     href: "/dashboard",
-    icon: LayoutDashboard
+    icon: LayoutDashboard,
   },
   {
     label: "Clients",
     href: "/clients",
-    icon: Users
+    icon: Users,
   },
   {
     label: "Projects",
     href: "/projects",
-    icon: FolderKanban
+    icon: FolderKanban,
   },
   {
     label: "Contractors",
     href: "/contractors",
-    icon: Briefcase
+    icon: Briefcase,
   },
   {
     label: "Transactions",
     href: "/transactions",
-    icon: Receipt
+    icon: Receipt,
   },
   {
     label: "Invoices",
     href: "/invoices",
-    icon: FileText
+    icon: FileText,
   },
   {
     label: "Receivables",
     href: "/receivables",
-    icon: HandCoins
+    icon: HandCoins,
+  },
+  {
+    label: "Director Loans",
+    href: "/director-loans",
+    icon: Landmark,
   },
   {
     label: "Reports",
     href: "/reports",
-    icon: BarChart3
-  }
+    icon: BarChart3,
+  },
 ];
 
 export function Sidebar() {
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-slate-200 p-6">
-        <h1 className="text-xl font-bold">
-          BizFlow
-        </h1>
+        <h1 className="text-xl font-bold">BizFlow</h1>
 
         <p className="mt-1 text-sm text-slate-500">
           Business Management Platform

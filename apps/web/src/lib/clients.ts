@@ -36,3 +36,35 @@ export async function createClient(
     }
   );
 }
+
+export async function updateClient(
+  id: string,
+  data: {
+    name?: string;
+    contactName?: string;
+    email?: string;
+    phone?: string;
+    vatNumber?: string;
+    billingAddress?: string;
+    notes?: string;
+  }
+) {
+  return apiFetch(
+    `/clients/${id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(data)
+    }
+  );
+}
+
+export async function deleteClient(
+  id: string
+) {
+  return apiFetch(
+    `/clients/${id}`,
+    {
+      method: "DELETE"
+    }
+  );
+}   

@@ -14,13 +14,17 @@ import {
 } from "@bizflow/ui";
 
 import { getCurrentUser } from "../../lib/auth";
+
 import {
   getClients,
   type Client
 } from "../../lib/clients";
+
 import {
   createProject,
+  deleteProject,
   getProjects,
+  updateProject,
   type Project
 } from "../../lib/projects";
 
@@ -35,6 +39,9 @@ export default function ProjectsPage() {
     useState("");
 
   const [clientId, setClientId] =
+    useState("");
+
+  const [editingProjectId, setEditingProjectId] =
     useState("");
 
   const [userName, setUserName] =
@@ -84,7 +91,6 @@ export default function ProjectsPage() {
     }
 
     if (!clientId) {
-      alert("Please select a client");
       return;
     }
 
@@ -97,6 +103,71 @@ export default function ProjectsPage() {
     setClientId("");
 
     await loadProjects();
+  }
+
+  async function handleEditProject(
+    project: Project
+  ) {
+    setEditingProjectId(
+      project.id
+    );
+
+    setProjectName(
+      project.name
+    );
+
+    setClientId(
+      project.clientId
+    );
+  }
+
+  async function handleSaveProject() {
+    if (
+      !editingProjectId ||
+      !projectName.trim() ||
+      !clientId
+    ) {
+      return;
+    }
+
+    await updateProject(
+      editingProjectId,
+      {
+        name: projectName,
+        clientId
+      }
+    );
+
+    setEditingProjectId("");
+    setProjectName("");
+    setClientId("");
+
+    await loadProjects();
+  }
+
+  async function handleDeleteProject(
+    projectId: string
+  ) {
+    await deleteProject(
+      projectId
+    );
+
+    if (
+      editingProjectId ===
+      projectId
+    ) {
+      setEditingProjectId("");
+      setProjectName("");
+      setClientId("");
+    }
+
+    await loadProjects();
+  }
+
+  function handleCancelEdit() {
+    setEditingProjectId("");
+    setProjectName("");
+    setClientId("");
   }
 
   return (
@@ -116,7 +187,9 @@ export default function ProjectsPage() {
       <Card>
         <CardHeader>
           <CardTitle>
-            Create Project
+            {editingProjectId
+              ? "Edit Project"
+              : "Create Project"}
           </CardTitle>
         </CardHeader>
 
@@ -158,13 +231,29 @@ export default function ProjectsPage() {
               )}
             </select>
 
-            <Button
-              onClick={
-                handleCreateProject
-              }
-            >
-              Create Project
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={
+                  editingProjectId
+                    ? handleSaveProject
+                    : handleCreateProject
+                }
+              >
+                {editingProjectId
+                  ? "Save"
+                  : "Create"}
+              </Button>
+
+              {editingProjectId ? (
+                <Button
+                  onClick={
+                    handleCancelEdit
+                  }
+                >
+                  Cancel
+                </Button>
+              ) : null}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -192,15 +281,53 @@ export default function ProjectsPage() {
                       key={project.id}
                       className="rounded-lg border border-slate-200 p-4"
                     >
-                      <p className="font-medium">
-                        {project.name}
-                      </p>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium">
+                            {project.name}
+                          </p>
 
-                      {project.status ? (
-                        <p className="text-sm text-slate-500">
-                          {project.status}
-                        </p>
-                      ) : null}
+                          {project.client ? (
+                            <p className="text-sm text-slate-500">
+                              Client:{" "}
+                              {
+                                project.client
+                                  .name
+                              }
+                            </p>
+                          ) : null}
+
+                          {project.status ? (
+                            <p className="text-sm text-slate-500">
+                              {
+                                project.status
+                              }
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() =>
+                              handleEditProject(
+                                project
+                              )
+                            }
+                          >
+                            Edit
+                          </Button>
+
+                          <Button
+                            onClick={() =>
+                              handleDeleteProject(
+                                project.id
+                              )
+                            }
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   )
                 )}

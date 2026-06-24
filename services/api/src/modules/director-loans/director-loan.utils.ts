@@ -1,11 +1,9 @@
-import {
-  DirectorLoanTransactionType
-} from "@prisma/client";
+import { DirectorLoanTransactionType } from "@prisma/client";
 
 export function calculateBalance(
   currentBalance: number,
   amount: number,
-  type: DirectorLoanTransactionType
+  type: DirectorLoanTransactionType,
 ): number {
   switch (type) {
     case DirectorLoanTransactionType.DRAWDOWN:

@@ -14,9 +14,12 @@ import {
 } from "@bizflow/ui";
 
 import { getCurrentUser } from "../../lib/auth";
+
 import {
   createClient,
+  deleteClient,
   getClients,
+  updateClient,
   type Client
 } from "../../lib/clients";
 
@@ -31,6 +34,9 @@ export default function ClientsPage() {
     useState("");
 
   const [clientName, setClientName] =
+    useState("");
+
+  const [editingClientId, setEditingClientId] =
     useState("");
 
   async function loadClients() {
@@ -77,6 +83,62 @@ export default function ClientsPage() {
     await loadClients();
   }
 
+  async function handleEditClient(
+    client: Client
+  ) {
+    setEditingClientId(
+      client.id
+    );
+
+    setClientName(
+      client.name
+    );
+  }
+
+  async function handleSaveClient() {
+    if (
+      !editingClientId ||
+      !clientName.trim()
+    ) {
+      return;
+    }
+
+    await updateClient(
+      editingClientId,
+      {
+        name: clientName
+      }
+    );
+
+    setEditingClientId("");
+    setClientName("");
+
+    await loadClients();
+  }
+
+  async function handleDeleteClient(
+    clientId: string
+  ) {
+    await deleteClient(
+      clientId
+    );
+
+    if (
+      editingClientId ===
+      clientId
+    ) {
+      setEditingClientId("");
+      setClientName("");
+    }
+
+    await loadClients();
+  }
+
+  async function handleCancelEdit() {
+    setEditingClientId("");
+    setClientName("");
+  }
+
   return (
     <AppShell
       sidebar={<Sidebar />}
@@ -106,7 +168,9 @@ export default function ClientsPage() {
       <Card>
         <CardHeader>
           <CardTitle>
-            Create Client
+            {editingClientId
+              ? "Edit Client"
+              : "Create Client"}
           </CardTitle>
         </CardHeader>
 
@@ -125,11 +189,25 @@ export default function ClientsPage() {
 
             <Button
               onClick={
-                handleCreateClient
+                editingClientId
+                  ? handleSaveClient
+                  : handleCreateClient
               }
             >
-              Create
+              {editingClientId
+                ? "Save"
+                : "Create"}
             </Button>
+
+            {editingClientId ? (
+              <Button
+                onClick={
+                  handleCancelEdit
+                }
+              >
+                Cancel
+              </Button>
+            ) : null}
           </div>
         </CardContent>
       </Card>
@@ -157,15 +235,41 @@ export default function ClientsPage() {
                       key={client.id}
                       className="rounded-lg border border-slate-200 p-4"
                     >
-                      <p className="font-medium">
-                        {client.name}
-                      </p>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium">
+                            {client.name}
+                          </p>
 
-                      {client.email ? (
-                        <p className="text-sm text-slate-500">
-                          {client.email}
-                        </p>
-                      ) : null}
+                          {client.email ? (
+                            <p className="text-sm text-slate-500">
+                              {client.email}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() =>
+                              handleEditClient(
+                                client
+                              )
+                            }
+                          >
+                            Edit
+                          </Button>
+
+                          <Button
+                            onClick={() =>
+                              handleDeleteClient(
+                                client.id
+                              )
+                            }
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   )
                 )}
